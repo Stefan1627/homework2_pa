@@ -1,0 +1,35 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -lm
+SRC_DIR = .
+
+.PHONY: build clean
+
+# Define source files
+p1_SRC = $(SRC_DIR)/p1.c
+p2_SRC = $(SRC_DIR)/p2.c
+p3_SRC = $(SRC_DIR)/p3.c
+
+# Build all targets
+EXISTING_FILES = $(wildcard $(p1_SRC) $(p2_SRC) $(p3_SRC))
+build: $(EXISTING_FILES)
+
+# Run targets
+run-p1:
+	./p1
+run-p2:
+	./p2
+run-p3:
+	./p3
+
+# Compilation targets
+p1: $(p1_SRC)
+	$(CC) $(CFLAGS) $< -o $@
+p2: $(p2_SRC)
+	$(CC) $(CFLAGS) $< -o $@
+p3: $(p3_SRC)
+	$(CC) $(CFLAGS) $< -o $@
+
+# Clean compiled binaries
+clean:
+	rm -f p1 p2 p3
+

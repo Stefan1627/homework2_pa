@@ -1,0 +1,38 @@
+JAVAC = javac
+JAVA = java
+SRC_DIR = .
+
+.PHONY: build run clean
+
+# Define Java source files
+p1_SRC = $(SRC_DIR)/P1.java
+p2_SRC = $(SRC_DIR)/P2.java
+p3_SRC = $(SRC_DIR)/P3.java
+
+PROGS = p1 p2 p3
+
+EXISTING_FILES = $(wildcard $(p1_SRC) $(p2_SRC) $(p3_SRC))
+
+build: $(EXISTING_FILES)
+
+# Run targets
+run-p1:
+	$(JAVA) -cp $(SRC_DIR) P1
+
+run-p2:
+	$(JAVA) -cp $(SRC_DIR) P2
+
+run-p3:
+	$(JAVA) -cp $(SRC_DIR) P3
+
+# Compilation rules
+p1: $(p1_SRC)
+	$(JAVAC) $<
+p2: $(p2_SRC)
+	$(JAVAC) $<
+p3: $(p3_SRC)
+	$(JAVAC) $<
+
+# Clean compiled class files
+clean:
+	rm -f $(SRC_DIR)/*.class

@@ -1,0 +1,15 @@
+# Darius-Florentin Neatu <neatudarius@gmail.com>
+
+# ignorati
+# Makegfile intern folosit de checker
+
+all: build_verif
+
+build_verif:
+	g++ -std=c++17 -Wall -Wextra -lm -O3 ${ONLINE_JUDGE} _utils/verif.cpp -o verif
+	g++ -std=c++17 -Wall -Wextra -lm -O3 ${ONLINE_JUDGE} _utils/verif1.cpp -o verif_p1
+	g++ -std=c++17 -Wall -Wextra -lm -O3 ${ONLINE_JUDGE} _utils/verif3.cpp -o verif_p3
+
+
+clean:
+	rm -f verif verif_p1 verif_p3

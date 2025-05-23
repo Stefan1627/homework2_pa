@@ -1,0 +1,34 @@
+CC = g++
+CCFLAGS = -Wall -Wextra -std=c++17 -lm
+SRC_DIR = .
+
+# Define source files
+p1_SRC = $(SRC_DIR)/p1.cpp
+p2_SRC = $(SRC_DIR)/p2.cpp
+p3_SRC = $(SRC_DIR)/p3.cpp
+
+PROGS = p1 p2 p3
+
+.PHONY: build clean
+
+# Build all targets
+EXISTING_FILES = $(wildcard $(p1_SRC) $(p2_SRC) $(p3_SRC))
+build: $(EXISTING_FILES)
+
+# Run targets
+run-%: %
+	./$<
+
+# Compilation rules using the variables
+p1: $(p1_SRC)
+	$(CC) $(CCFLAGS) $< -o $@
+
+p2: $(p2_SRC)
+	$(CC) $(CCFLAGS) $< -o $@
+
+p3: $(p3_SRC)
+	$(CC) $(CCFLAGS) $< -o $@
+
+clean:
+	rm -f $(PROGS)
+
