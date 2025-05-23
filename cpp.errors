@@ -1,0 +1,5 @@
+/home/stefan/Github/homework2_pa/_utils/coding_style/check_cpp.py:57: DeprecationWarning: module 'sre_compile' is deprecated
+  import sre_compile
+Done processing ./p1.cpp
+Done processing ./p2.cpp
+Done processing ./p3.cpp
