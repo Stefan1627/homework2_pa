@@ -42,7 +42,7 @@ int main() {
 	}
 
 	// Build the graph edges by connecting each node
-	// at distance d to one at d-1
+	// at distance d to one at distance d-1
 	vector<pair<int, int>> edges;
 	for (int d = 1; d <= maxd; d++) {
 		int parent = byDist[d - 1][0];

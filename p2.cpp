@@ -46,9 +46,10 @@ int main() {
 		pos[idx].push_back(id);
 	}
 
-	// Sliding‐window over `vals[l]`…`vals[r-1]`
-	// satisfying vals[r-1] - vals[l] <= K
+	// allow[id] == 1 if cell id is within the current value-range window
 	vector<char> allow(N * M, 0);
+
+	// seen[id] stamps cells visited in the current BFS
 	vector<int> seen(N * M, 0);
 	int currentStamp = 0;
 	int r = 0, best = 0;
@@ -58,6 +59,7 @@ int main() {
 	int dx[4] = {1, -1, 0, 0};
 	int dy[4] = {0, 0, 1, -1};
 
+	// sliding-window over sorted unique values
 	for (int l = 0; l < U; l++) {
 		// remove the old minimum‐value cells
 		if (l > 0) {
@@ -73,13 +75,13 @@ int main() {
 			r++;
 		}
 
-		// we'll only start a BFS from each cell whose
+		// start a BFS from each cell whose
 		// value is the current minimum
 		currentStamp++;
 		for (int id0 : pos[l]) {
 			if (!allow[id0] || seen[id0] == currentStamp)
 				continue;
-			// BFS flood‐fill the component containing id0
+			// begin BFS flood‐fill
 			seen[id0] = currentStamp;
 			int head = 0, tail = 0, area = 1;
 			Q[tail++] = id0;

@@ -17,21 +17,20 @@ int main() {
 	int E1, E2, E3;
 	fin >> E1 >> E2 >> E3;
 
-	// Logs endpoints
 	vector<int> xs(N), ys(N), xe(N), ye(N);
 	for (int i = 0; i < N; i++) {
 		fin >> xs[i] >> ys[i] >> xe[i] >> ye[i];
 	}
-	// Movement strings: for each log, its T‐length directions
+
 	vector<string> moves(N);
 	for (int i = 0; i < N; i++) {
 		fin >> moves[i];
 	}
 
-	// Precompute for each log:
-	//  - orientation (horizontal vs vertical)
-	//  - segment length (number of steps = |Δx|+|Δy|)
-	//  - unit‐vector along the log, (dx,dy) = (1,0) or (0,1)
+    // determine for each log:
+    //  - whether it is horizontal (ys==ye) or vertical
+    //  - its length in number of segments
+    //  - a unit direction vector (dirx, diry) for moving "along" the log
 	vector<bool> horizontal(N);
 	vector<int> length(N), dirx(N), diry(N);
 	for (int i = 0; i < N; i++) {
@@ -43,14 +42,14 @@ int main() {
 		diry[i] = horizontal[i] ? 0 : 1;
 	}
 
-	// Build a flat index for (log i, position p along that log: 0..length[i])
+	// build a flat index for (log i, position p along that log: 0..length[i])
 	vector<int> offset(N + 1, 0);
 	for (int i = 0; i < N; i++) {
 		offset[i + 1] = offset[i] + (length[i] + 1);
 	}
 	int S = offset[N];  // total number of (log,pos) states
 
-	// For quick decoding state → (i,p)
+	// for quick decoding state → (i,p)
 	vector<int> state_log(S), state_pos(S);
 	for (int i = 0; i < N; i++) {
 		for (int p = 0; p <= length[i]; p++) {
@@ -60,9 +59,8 @@ int main() {
 		}
 	}
 
-	// Precompute cumulative movements of each log: after t steps, how far
-	// it has drifted from its initial endpoints.
-	// cumdx[i][t], cumdy[i][t] = total Δx,Δy after t moves.
+	// precompute cumulative drift of each log at each time t:
+    // cumdx[i][t], cumdy[i][t] = total shift of the log's origin after t moves
 	vector<vector<int>> cumdx(N, vector<int>(T + 1, 0)),
 		cumdy(N, vector<int>(T + 1, 0));
 	auto dir_delta = [&](char c) {
@@ -90,33 +88,33 @@ int main() {
 	// dp[t][s] = minimal energy to be in state s after t time‐steps
 	vector<vector<int>> dp(T + 1, vector<int>(S, INF));
 
-	// To reconstruct path:
+	// to reconstruct path:
 	//   prev_state[t][s] = previous state‐index at time t-1
 	//   prev_act  [t][s] = { action_char,
-	//   jump_target_log_index (0-based or -1) }
+	//   jump_target_log_index (0-based or -1)
 	vector<vector<int>> prev_state(T + 1, vector<int>(S, -1));
 	vector<vector<pair<char, int>>> prev_act(T + 1,
 											 vector<pair<char, int>>(S, {'?', -1}));
 
-	// Initial: at time 0, on log 1 (index 0), at p=0 (the "first" endpoint)
+	// at time 0, on log 1 (index 0), at p=0 (first endpoint)
 	dp[0][offset[0] + 0] = 0;
 
-	// A little helper to compute absolute position of state s at time t:
+	//  helper to compute absolute position of state s at time t
 	auto get_abs = [&](int s, int t) {
 		int i = state_log[s];
 		int p = state_pos[s];
 		// endpoint1 at time t:
 		int ex = xs[i] + cumdx[i][t],
 			ey = ys[i] + cumdy[i][t];
-		// move p steps along the log:
+		// move p steps along the log
 		return make_pair(ex + p * dirx[i],
 						 ey + p * diry[i]);
 	};
 
-	// Main DP: for each t → t+1
+	// main DP: for each t → t+1
 	for (int t = 0; t < T; t++) {
-		// Build a map from absolute coordinate → list of (log i, pos p)
-		// so we can find all logs that pass through a given point at time t.
+		// build a map from absolute coordinate → list of (log i, pos p)
+		// so we can find all logs that pass through a given point at time t
 		unordered_map<long long, vector<pair<int, int>>> bucket;
 		bucket.reserve(S);
 		for (int s = 0; s < S; s++) {
@@ -125,7 +123,7 @@ int main() {
 			bucket[key].emplace_back(state_log[s], state_pos[s]);
 		}
 
-		// Relax all transitions from dp[t][*] into dp[t+1][*]
+		// relax all transitions from dp[t][*] into dp[t+1][*]
 		for (int s = 0; s < S; s++) {
 			int cost = dp[t][s];
 			if (cost == INF)
@@ -134,7 +132,7 @@ int main() {
 			int i = state_log[s];
 			int p = state_pos[s];
 
-			// 1) Stay on the same log: pay E1, same (i,p)
+			// stay on the same log: pay E1, same (i,p)
 			int s2 = s;
 			int nc = cost + E1;
 			if (nc < dp[t + 1][s2]) {
@@ -143,7 +141,7 @@ int main() {
 				prev_act[t + 1][s2] = {'H', -1};
 			}
 
-			// 2) Step along the log: pay E2, to (i,p-1) or (i,p+1) if valid
+			// step along the log: pay E2, to (i,p-1) or (i,p+1) if valid
 			if (p > 0) {
 				int s2 = offset[i] + (p - 1);
 				int nc = cost + E2;
@@ -166,8 +164,8 @@ int main() {
 				}
 			}
 
-			// 3) Jump to any other log that also
-			// covers this same absolute point
+			// jump to any other log that also
+			// covers this same absolute point : pay E3
 			auto [ax, ay] = get_abs(s, t);
 			long long key = ((long long)ax << 32) | (unsigned int)ay;
 			auto &list = bucket[key];
@@ -188,8 +186,8 @@ int main() {
 		}
 	}
 
-	// Find the best‐energy way to be exactly at (target_x,target_y)
-	// at some time t≤T
+	// find the best‐energy way to be exactly at (target_x,target_y)
+	// at some time t ≤ T
 	int bestEnergy = INF, bestT = -1, bestS = -1;
 	for (int t = 0; t <= T; t++) {
 		for (int s = 0; s < S; s++) {
@@ -207,13 +205,13 @@ int main() {
 		}
 	}
 
-	// If unreachable, print -1 and exit
+	// if unreachable, print -1 and exit
 	if (bestEnergy == INF) {
 		fout << "-1\n";
 		return 0;
 	}
 
-	// Reconstruct the sequence of moves
+	// reconstruct the sequence of moves
 	vector<string> moves_out;
 	int t = bestT, s = bestS;
 	while (t > 0) {
@@ -221,10 +219,8 @@ int main() {
 		int ps = prev_state[t][s];
 
 		if (c == 'J') {
-			// jump: "J <log_index+1>"
 			moves_out.push_back("J " + to_string(j + 1));
 		} else {
-			// 'H', 'N', 'S', 'E', or 'V'
 			moves_out.push_back(string(1, c));
 		}
 
@@ -233,7 +229,6 @@ int main() {
 	}
 	reverse(moves_out.begin(), moves_out.end());
 
-	// Output
 	fout << bestEnergy << "\n";
 	fout << moves_out.size() << "\n";
 	for (auto &mv : moves_out) {

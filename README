@@ -1,110 +1,82 @@
-hellos
+# Problema 1
 
-What changed and why it’s faster
+## Descrierea soluției
+Pentru a reconstrui un graf neorientat cu N noduri astfel încât distanțele față de nodul 1
+să coincidă cu vectorul `v`, am observat că un arbore în care fiecare nod la distanța `d`
+este conectat la un nod oarecare de la distanța `d-1` realizează exact condiția cerută.
+Astfel:
+1. Citim vectorul `v[1..N]`.
+2. Verificăm validitatea: 
+   - `v[1]` trebuie să fie 0 (nodul 1 este sursa).
+   - Pentru orice i>1, `v[i]` nu poate fi 0 (alt nod cu distanța 0 e imposibil).
+3. Grupăm nodurile în vectori `byDist[d]` după distanța `d`.
+4. Pentru fiecare distanță `d>0` care are noduri, ne asigurăm că există cel puțin
+   un nod la distanța `d-1`.
+5. Construim muchiile: pentru fiecare nod `u` cu distanța `d`, adăugăm muchia
+   `(parent, u)`, unde `parent` e primul nod din `byDist[d-1]`.
+6. Dacă vreo condiție de mai sus e încălcată, afișăm `-1`.
 
-    Early full‐grid check: as soon as global_max – global_min ≤ K, we know the entire N×MN×M is one big connected zone.
+## Complexitate
+- **Timp:** O(N) pentru citire, grupare, verificări și construire muchii.
+- **Memorie:** O(N) pentru vectorii de distanțe și grupare.
+- Numărul de muchii rezultat este cel mult N−1, deci respectă cerința de ≤10^6 muchii.
 
-    Flattened grid into a 1D array (mat[id]), avoiding double‐index overhead.
-
-    Sliding window on distinct values exactly as before, but we only BFS from those cells whose value equals the current window’s minimum. Any connected component in the window has its minimum at some value, so it will be discovered once when l reaches that value’s index.
-
-    No full resets of a 2D visited array: we keep a seen[id] timestamp and bump currentStamp each iteration, so checking/resetting visited is O(1)O(1) per cell without a O(NM)O(NM) clear.
-
-    Manual C‐style queue in a fixed array avoids any STL overhead in inner loops.
-
-This brings the worst‐case work to roughly
-∑l=0U−1∣{ cells in [l,r)}∣  ×4
-l=0∑U−1​
-​{cells in [l,r)}
-​×4
-
-neighbor‐checks, which for NM≤104NM≤104 and U≤104U≤104 stays comfortably under typical 1 s limits.
+## Considerații adiționale
+- Alegerea unui singur părinte la fiecare nivel garantează un arbore (nu cicluri),
+  suficient pentru a obține exact distanțele date.
+- Soluția detectează rapid (prin verificările pe `byDist`) cazurile imposibile
+  fără a construi graful în totaliate.
 
 
-Algoritm
 
-    Modelarea stărilor
-    Fiecare poziţie posibilă a lui Robin la un moment de timp t este definită de:
+# Problema 2
 
-        i = indexul busteanului pe care se află (1≤i≤N),
+## Soluție aleasă
+Am aplicat un **sliding-window** peste valorile unice din matrice, astfel:
+1. Sortăm și extragem valorile unice `vals[0..U-1]`.
+2. Menținem o fereastră de indici `[l, r)` în `vals` astfel încât `vals[r-1] - vals[l] ≤ K`.
+3. În fiecare pas, marcăm cu `allow[id] = 1` doar celulele cu valori în fereastră.
+4. Pentru fiecare celulă care conține `vals[l]` (valoarea minimă curentă), lansăm un BFS
+   flood-fill pentru a determina aria componentei conexe din matricea marcată.
+5. Reținem maximul dintre ariile găsite.
 
-        p = indicele unei poziţii pe acel bustean (0 pentru capătul “start”, până la length[i] pentru capătul “end”).
-        În total, pentru fiecare bustean de lungime L avem L+1 poziţii, deci maxim ≈880 stări posibile per moment de timp.
+Dacă `global_max - global_min ≤ K`, întregul grid este deja o singură zonă.
 
-    Graf aciclic în timp (Time‐expanded graph)
-    Luăm un grafic orientat stratificat pe t = 0…T.
-    Un nod este (t, i, p). Din fiecare nod la nivel t există arce către nodurile (t+1,*,*) care corespund celor trei acţiuni:
+## Complexitate
+- **Timp:**  
+  - Sortare + unicat: `O(NM log(NM))`.  
+  - Sliding window + BFS-uri: `O(U · NM)` în cel mai rău caz, cu `U ≤ NM`.  
+  - Pentru `N,M ≤ 100`, rezultă `NM ≤ 10^4`, iar algoritmul este eficient.
+- **Memorie:** `O(NM)` pentru matrice și vectorii auxiliare (`allow`, `seen`, coadă, `pos`).
 
-        Stat pe loc (H) → rămâne pe (i,p), cost = E1.
+## Observații
+- BFS-ul este implementat cu o coadă statică pentru performanță.
+- Verificarea globală (`global_max - global_min`) evită cazul trivial în `O(NM)`.
 
-        Pas de unitar pe bustean (N/S/E/V) → mută p→p±1 pe acelaşi bustean, cost = E2.
 
-            Dacă stă pe un bustean orizontal, mutările sunt doar E (p+1) sau V (p-1).
 
-            Dacă stă pe un bustean vertical, mutările sunt doar N (p+1) sau S (p-1).
+# Problema 3
 
-        Salt pe alt bustean (J j) → dacă la timp t poziţia (i,p) coincide cu o poziţie a busteanului j, poate sări acolo, cost = E3.
+## Descrierea soluției
+Transformăm situația într-un **graf de stări** în spațiul (timp × poziție pe buștean):
+- Fiecărui buștean `i` cu `length[i]+1` poziții `p=0…length[i]` îi corespunde un index plat `s`.
+- O stare este un cuplu `(t, s)` = timpul `t` și poziția `s`.
+- Tranzițiile de la `(t, s)` la `(t+1, s2)` reprezintă cele trei acțiuni posibile:
+  1. **H** (wait): rămâi pe același `s`, cost `E1`.
+  2. **N/S/E/V** (pas pe buștean): `s→s±1`, cost `E2`, direcția depinde de orientare.
+  3. **J i** (sărit pe alt buștean): de la `(i,p)` la `(j,pj)`, dacă coordonatele absolute coincid, cost `E3`.
+- Se calculează poziția absolută `(x,y)` a fiecărei stări prin derivație cumulată a mișcării fiecărui buștean.
+- Folosim **programare dinamică** pe timp `dp[t][s]` = energie minimă până la `(t,s)`.
+- Rezultatul este minimul `dp[t][s]` pentru orice `t≤T` în care `(x,y)=(target_x,target_y)`.
 
-    Programare dinamică
+## Complexitate
+- Număr de stări S = Σ(length[i]+1) ≤ O(N·L) (L = lungimea maximă a oricărui buștean).
+- DP costă O(T × S × d), unde în
+  - fiecare stare relaxăm O(1) pași și O(k) sărituri,
+  - k = numărul de bușteni care intersectează o poziție (în medie mic).
+- Pentru `N ≤ 80`, `T ≤ 400`, `L ≤ 1000`, soluția rulează în limite (≈10⁷–10⁸ operații).
 
-        Definim dp[t][s] = energia minimă ca să ajungem în starea s (un index plat al lui (i,p)) după t paşi (timpuri).
-
-        Iniţial dp[0][s0] = 0 pentru starea de start (i=1, p=0), restul = ∞.
-
-        Pentru fiecare timp t de la 0 la T−1, relaxăm toate tranziţiile către dp[t+1][*].
-
-        Pentru a găsi „intersecţiile” (săriturile), la fiecare t construim un mapare de la coordonata absolută (x,y) în vectorul tuturor (i,p) care stau acolo în acel moment.
-
-    Finalizare şi reconstrucţie
-
-        După a umple matricea dp, căutăm orice stare (t,s) pentru care poziţia absolută corespunde coordonatelor lui Maid Marian și alege energia minimă.
-
-        Recontruim calea urmând vectorul prev_state și prev_act de la acel (t,s) înapoi până la (0,s0).
-
-        Scriem energia totală, numărul de mișcări M = t, apoi cele M linii cu acțiunile.
-
-Explicația codului
-
-    Citire și preprocesare
-
-        Citim T, N, coordonatele țintei, costurile E1, E2, E3, apoi capetele celor N busteani și șirurile de mișcare de lungime T.
-
-        Determinăm pentru fiecare bustean dacă e orizontal sau vertical, lungimea sa și vectorul unitate (dirx,diry) de-a lungul lui.
-
-    Indexare plată a stărilor
-
-        Calculăm offset[i] astfel încât starea (i,p) să primească un index plat s = offset[i] + p în intervalul [0…S−1].
-
-        Avem și invers, state_log[s], state_pos[s], pentru a ști rapid din s la ce (i,p) corespunde.
-
-    Cumularea mișcărilor busteanului
-
-        cumdx[i][t], cumdy[i][t] rețin driftul total (Δx,Δy) până la pasul t, ca să putem afla rapid poziția oricărei poziții (i,p) la momentul t:
-        (x,y)=(xstart,i+cumdx[i][t],  ystart,i+cumdy[i][t])  +  p⋅(dirx[i],diry[i]).
-        (x,y)=(xstart,i​+cumdx[i][t],ystart,i​+cumdy[i][t])+p⋅(dirx[i],diry[i]).
-
-    DP stratificat pe timp
-
-        dp este un tablou (T+1)×S inițial ∞, cu excepția dp[0][s_0]=0.
-
-        Pentru fiecare t=0…T−1:
-
-            Construim un unordered_map de la cheia key = (x<<32)|y la toate perechile (i,p) care stau la poziția (x,y) la momentul t.
-
-            Pentru fiecare stare s cu dp[t][s]<INF, relaxăm:
-
-                H: dp[t+1][s] = dp[t][s] + E1
-
-                pas înainte/înapoi (dacă p±1 rămâne în segment): dp[t+1][offset[i]+(p±1)] = dp[t][s] + E2
-
-                J j: pentru fiecare (j,pj) din bucket[cheia poziției], j≠i: dp[t+1][offset[j]+pj] = dp[t][s] + E3.
-
-        Fiecare dată când actualizăm, reținem și prev_state și prev_act pentru a reface traseul la final.
-
-    Alegerea și reconstrucția soluției
-
-        La final, pentru oricare t≤T și stare s, dacă poziția (x,y) corespunde țintei, verificăm dp[t][s] și luăm minimul.
-
-        Reconstruim pașii mergând înapoi de la (bestT, bestS) până la (0,s0), apoi inversăm lista de acțiuni și o tipărim împreună cu energia minimă și numărul de mișcări.
-
-Acest algoritm rulează în O(T·S·avg_deg), cu S≲N·L≤80·10=800 şi T≤400, deci se încadrează confortabil în limite.
+## Observații
+- Am folosit un `unordered_map` pentru a grupa rapid stările care se intersectează la același punct.
+- Soluția reconstituie traseul complet, nu doar costul.
+- Memoria poate fi redusă ținând doar două straturi de DP (t și t+1), dar aici am păstrat tot `dp` pentru backtracking simplu.
