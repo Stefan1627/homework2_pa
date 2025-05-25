@@ -1,82 +1,81 @@
-# Problema 1
+# Problem 1
+---
+# Stefan CALMAC 324CC
+---
 
-## Descrierea soluției
-Pentru a reconstrui un graf neorientat cu N noduri astfel încât distanțele față de nodul 1
-să coincidă cu vectorul `v`, am observat că un arbore în care fiecare nod la distanța `d`
-este conectat la un nod oarecare de la distanța `d-1` realizează exact condiția cerută.
-Astfel:
-1. Citim vectorul `v[1..N]`.
-2. Verificăm validitatea: 
-   - `v[1]` trebuie să fie 0 (nodul 1 este sursa).
-   - Pentru orice i>1, `v[i]` nu poate fi 0 (alt nod cu distanța 0 e imposibil).
-3. Grupăm nodurile în vectori `byDist[d]` după distanța `d`.
-4. Pentru fiecare distanță `d>0` care are noduri, ne asigurăm că există cel puțin
-   un nod la distanța `d-1`.
-5. Construim muchiile: pentru fiecare nod `u` cu distanța `d`, adăugăm muchia
-   `(parent, u)`, unde `parent` e primul nod din `byDist[d-1]`.
-6. Dacă vreo condiție de mai sus e încălcată, afișăm `-1`.
+## Solution description
+To reconstruct an undirected graph with N nodes such that the distances from node 1
+coincide with the vector `v`, we observed that a tree in which each node at distance `d`
+is connected to some node at distance `d-1` exactly fulfills the required condition.
+Thus:
+1. We read the vector `v[1..N]`.
+2. We check the validity:
+- `v[1]` must be 0 (node ​​1 is the source).
+- For any i>1, `v[i]` cannot be 0 (another node with distance 0 is impossible).
+3. We group the nodes into vectors `byDist[d]` by distance `d`.
+4. For each distance `d>0` that has nodes, we ensure that there is at least
+one node at distance `d-1`.
+5. Build the edges: for each node `u` with distance `d`, add the edge
+`(parent, u)`, where `parent` is the first node in `byDist[d-1]`.
+6. If any of the above conditions is violated, print `-1`.
 
-## Complexitate
-- **Timp:** O(N) pentru citire, grupare, verificări și construire muchii.
-- **Memorie:** O(N) pentru vectorii de distanțe și grupare.
-- Numărul de muchii rezultat este cel mult N−1, deci respectă cerința de ≤10^6 muchii.
+## Complexity
+- **Time:** O(N) for reading, grouping, checks and edge building.
+- **Memory:** O(N) for distance vectors and grouping.
+- The number of resulting edges is at most N−1, so it meets the requirement of ≤10^6 edges.
 
-## Considerații adiționale
-- Alegerea unui singur părinte la fiecare nivel garantează un arbore (nu cicluri),
-  suficient pentru a obține exact distanțele date.
-- Soluția detectează rapid (prin verificările pe `byDist`) cazurile imposibile
-  fără a construi graful în totaliate.
+## Additional considerations
+- Choosing a single parent at each level guarantees a tree (no cycles),
+sufficient to obtain exactly the given distances.
+- The solution quickly detects (through checks on `byDist`) impossible cases
+without building the graph in total.
 
+# Problem 2
 
+## Chosen Solution
+We applied a **sliding-window** over the unique values ​​in the matrix, as follows:
+1. Sort and extract the unique values ​​`vals[0..U-1]`.
+2. Maintain a window of indices `[l, r)` in `vals` such that `vals[r-1] - vals[l] ≤ K`.
+3. At each step, we mark with `allow[id] = 1` only the cells with values ​​in the window.
+4. For each cell containing `vals[l]` (the current minimum value), we launch a BFS
+flood-fill to determine the area of ​​the connected component in the marked matrix.
+5. We keep the maximum of the areas found.
 
-# Problema 2
+If `global_max - global_min ≤ K`, the entire grid is already a single area.
 
-## Soluție aleasă
-Am aplicat un **sliding-window** peste valorile unice din matrice, astfel:
-1. Sortăm și extragem valorile unice `vals[0..U-1]`.
-2. Menținem o fereastră de indici `[l, r)` în `vals` astfel încât `vals[r-1] - vals[l] ≤ K`.
-3. În fiecare pas, marcăm cu `allow[id] = 1` doar celulele cu valori în fereastră.
-4. Pentru fiecare celulă care conține `vals[l]` (valoarea minimă curentă), lansăm un BFS
-   flood-fill pentru a determina aria componentei conexe din matricea marcată.
-5. Reținem maximul dintre ariile găsite.
+## Complexity
+- **Time:**
+- Sort + unique: `O(NM log(NM))`.
+- Sliding window + BFSs: `O(U · NM)` in the worst case, with `U ≤ NM`.
+- For `N,M ≤ 100`, `NM ≤ 10^4` results, and the algorithm is efficient.
+- **Memory:** `O(NM)` for the matrix and auxiliary vectors (`allow`, `seen`, queue, `pos`).
 
-Dacă `global_max - global_min ≤ K`, întregul grid este deja o singură zonă.
+## Remarks
+- The BFS is implemented with a static queue for performance.
+- The global check (`global_max - global_min`) avoids the trivial case in `O(NM)`.
 
-## Complexitate
-- **Timp:**  
-  - Sortare + unicat: `O(NM log(NM))`.  
-  - Sliding window + BFS-uri: `O(U · NM)` în cel mai rău caz, cu `U ≤ NM`.  
-  - Pentru `N,M ≤ 100`, rezultă `NM ≤ 10^4`, iar algoritmul este eficient.
-- **Memorie:** `O(NM)` pentru matrice și vectorii auxiliare (`allow`, `seen`, coadă, `pos`).
+# Problem 3
 
-## Observații
-- BFS-ul este implementat cu o coadă statică pentru performanță.
-- Verificarea globală (`global_max - global_min`) evită cazul trivial în `O(NM)`.
+## Solution description
+We transform the situation into a **state graph** in the space (time × position on the log):
+- Each log `i` with `length[i]+1` positions `p=0…length[i]` corresponds to a flat index `s`.
+- A state is a pair `(t, s)` = time `t` and position `s`.
+- The transitions from `(t, s)` to `(t+1, s2)` represent the three possible actions:
+1. **H** (wait): stay on the same `s`, cost `E1`.
+2. **N/S/E/V** (step on log): `s→s±1`, cost `E2`, direction depends on orientation.
+3. **J i** (jump on another log): from `(i,p)` to `(j,pj)`, if the absolute coordinates coincide, cost `E3`.
+- Calculate the absolute position `(x,y)` of each state by cumulative derivation of the motion of each log.
+- We use **dynamic programming** in time `dp[t][s]` = minimum energy up to `(t,s)`.
+- The result is the minimum `dp[t][s]` for any `t≤T` where `(x,y)=(target_x,target_y)`.
 
+## Complexity
+- Number of states S = Σ(length[i]+1) ≤ O(N·L) (L = maximum length of any log).
+- DP costs O(T × S × d), where in
+- each state we relax O(1) steps and O(k) jumps,
+- k = number of logs intersecting a position (on average small).
+- For `N ≤ 80`, `T ≤ 400`, `L ≤ 1000`, the solution runs in bounds (≈10⁷–10⁸ operations).
 
-
-# Problema 3
-
-## Descrierea soluției
-Transformăm situația într-un **graf de stări** în spațiul (timp × poziție pe buștean):
-- Fiecărui buștean `i` cu `length[i]+1` poziții `p=0…length[i]` îi corespunde un index plat `s`.
-- O stare este un cuplu `(t, s)` = timpul `t` și poziția `s`.
-- Tranzițiile de la `(t, s)` la `(t+1, s2)` reprezintă cele trei acțiuni posibile:
-  1. **H** (wait): rămâi pe același `s`, cost `E1`.
-  2. **N/S/E/V** (pas pe buștean): `s→s±1`, cost `E2`, direcția depinde de orientare.
-  3. **J i** (sărit pe alt buștean): de la `(i,p)` la `(j,pj)`, dacă coordonatele absolute coincid, cost `E3`.
-- Se calculează poziția absolută `(x,y)` a fiecărei stări prin derivație cumulată a mișcării fiecărui buștean.
-- Folosim **programare dinamică** pe timp `dp[t][s]` = energie minimă până la `(t,s)`.
-- Rezultatul este minimul `dp[t][s]` pentru orice `t≤T` în care `(x,y)=(target_x,target_y)`.
-
-## Complexitate
-- Număr de stări S = Σ(length[i]+1) ≤ O(N·L) (L = lungimea maximă a oricărui buștean).
-- DP costă O(T × S × d), unde în
-  - fiecare stare relaxăm O(1) pași și O(k) sărituri,
-  - k = numărul de bușteni care intersectează o poziție (în medie mic).
-- Pentru `N ≤ 80`, `T ≤ 400`, `L ≤ 1000`, soluția rulează în limite (≈10⁷–10⁸ operații).
-
-## Observații
-- Am folosit un `unordered_map` pentru a grupa rapid stările care se intersectează la același punct.
-- Soluția reconstituie traseul complet, nu doar costul.
-- Memoria poate fi redusă ținând doar două straturi de DP (t și t+1), dar aici am păstrat tot `dp` pentru backtracking simplu.
+## Remarks
+- We used an `unordered_map` to quickly group states that intersect at the same point.
+- The solution reconstructs the full path, not just the cost.
+- The memory can be reduced by keeping only two layers of DP (t and t+1), but here we kept all `dp` for simple backtracking.
